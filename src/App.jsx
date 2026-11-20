@@ -9,12 +9,15 @@ import TeacherSection from './components/TeacherSection';
 import Testimonials from './components/Testimonials';
 import Footer from './components/Footer';
 import JoinModal from './components/JoinModal';
+import CreateQuiz from './components/CreateQuiz';
 
 export default function App() {
+  const [view, setView] = useState('landing'); // 'landing' | 'editor'
   const [modalState, setModalState] = useState({ isOpen: false, mode: 'join', pin: '' });
 
   const handleHostClick = () => {
-    setModalState({ isOpen: true, mode: 'host', pin: '' });
+    // Switch to Create Quiz 3-panel editor workspace
+    setView('editor');
   };
 
   const handleJoinClick = (pin = '') => {
@@ -24,6 +27,10 @@ export default function App() {
   const handleCloseModal = () => {
     setModalState(prev => ({ ...prev, isOpen: false }));
   };
+
+  if (view === 'editor') {
+    return <CreateQuiz onBack={() => setView('landing')} />;
+  }
 
   return (
     <div className="min-h-screen bg-[#0F071E] text-white flex flex-col font-sans">
