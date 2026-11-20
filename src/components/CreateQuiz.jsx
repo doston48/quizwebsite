@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, Image, Clock, Award, Check, Settings, Sparkles, Play, Save, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Copy, Image, Clock, Award, Check, Settings, Sparkles, Play, Save, AlertCircle } from 'lucide-react';
 
 export default function CreateQuiz({ onBack }) {
   const [quizTitle, setQuizTitle] = useState('Biology 101: Cell Division Masterclass');
+  
   const [questions, setQuestions] = useState([
     {
       id: 1,
@@ -40,8 +41,8 @@ export default function CreateQuiz({ onBack }) {
       question: 'Plant cells contain both a cell wall and a cell membrane.',
       image: null,
       answers: [
-        { text: 'True', correct: true, color: 'bg-emerald-600', symbol: '▲', label: 'Red' },
-        { text: 'False', correct: false, color: 'bg-red-500', symbol: '◆', label: 'Blue' },
+        { text: 'True', correct: true, color: 'bg-emerald-600', symbol: '▲', label: 'True' },
+        { text: 'False', correct: false, color: 'bg-red-500', symbol: '◆', label: 'False' },
       ]
     }
   ]);
@@ -49,8 +50,37 @@ export default function CreateQuiz({ onBack }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const currentQ = questions[activeIndex];
 
+  // Validation checker for a question
+  const getQuestionError = (q) => {
+    if (!q.question || !q.question.trim()) return "Question text is required";
+    const nonEmpAnswers = q.answers.filter(a => a.text && a.text.trim() !== '');
+    if (nonEmpAnswers.length < 2) return "At least 2 filled answer choices required";
+    if (q.type !== 'Poll') {
+      const hasCorrect = q.answers.some(a => a.correct && a.text && a.text.trim() !== '');
+      if (!hasCorrect) return "Select at least one correct answer";
+    }
+    return null;
+  };
+
   const handleQuestionChange = (field, value) => {
     const updated = [...questions];
+    if (field === 'type') {
+      // If changing type to True/False, adjust answers to 2
+      if (value === 'True/False') {
+        updated[activeIndex].answers = [
+          { text: 'True', correct: true, color: 'bg-emerald-600', symbol: '▲', label: 'True' },
+          { text: 'False', correct: false, color: 'bg-red-500', symbol: '◆', label: 'False' },
+        ];
+      } else if (currentQ.type === 'True/False' && (value === 'Quiz' || value === 'Poll')) {
+        // Reset to 4 answers
+        updated[activeIndex].answers = [
+          { text: '', correct: true, color: 'bg-red-500', symbol: '▲', label: 'Red' },
+          { text: '', correct: false, color: 'bg-blue-600', symbol: '◆', label: 'Blue' },
+          { text: '', correct: false, color: 'bg-amber-500', symbol: '●', label: 'Yellow' },
+          { text: '', correct: false, color: 'bg-emerald-600', symbol: '■', label: 'Green' },
+        ];
+      }
+    }
     updated[activeIndex][field] = value;
     setQuestions(updated);
   };
@@ -58,8 +88,14 @@ export default function CreateQuiz({ onBack }) {
   const handleAnswerChange = (ansIdx, field, value) => {
     const updated = [...questions];
     if (field === 'correct') {
-      // Toggle correct
-      updated[activeIndex].answers[ansIdx].correct = value;
+      if (updated[activeIndex].type === 'True/False') {
+        // For True/False, only one can be correct
+        updated[activeIndex].answers.forEach((a, i) => {
+          a.correct = (i === ansIdx);
+        });
+      } else {
+        updated[activeIndex].answers[ansIdx].correct = value;
+      }
     } else {
       updated[activeIndex].answers[ansIdx].text = value;
     }
@@ -68,7 +104,7 @@ export default function CreateQuiz({ onBack }) {
 
   const addQuestion = () => {
     const newQ = {
-      id: questions.length + 1,
+      id: Date.now(),
       type: 'Quiz',
       timeLimit: 20,
       points: 'Standard',
@@ -85,6 +121,21 @@ export default function CreateQuiz({ onBack }) {
     setActiveIndex(questions.length);
   };
 
+  const duplicateQuestion = (idx, e) => {
+    e.stopPropagation();
+    const target = questions[idx];
+    const cloned = {
+      ...target,
+      id: Date.now(),
+      question: `${target.question} (Copy)`,
+      answers: target.answers.map(a => ({ ...a }))
+    };
+    const updated = [...questions];
+    updated.splice(idx + 1, 0, cloned);
+    setQuestions(updated);
+    setActiveIndex(idx + 1);
+  };
+
   const deleteQuestion = (idx, e) => {
     e.stopPropagation();
     if (questions.length === 1) return;
@@ -94,6 +145,8 @@ export default function CreateQuiz({ onBack }) {
       setActiveIndex(updated.length - 1);
     }
   };
+
+  const currentError = getQuestionError(currentQ);
 
   return (
     <div className="min-h-screen bg-[#0F071E] text-white flex flex-col font-sans select-none">
@@ -123,7 +176,7 @@ export default function CreateQuiz({ onBack }) {
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="bg-white/10 hover:bg-white/15 text-white font-heading font-bold px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-all">
+          <button className="bg-white/10 hover:bg-white/15 text-white font-heading font-bold px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-all cursor-pointer">
             <Save className="w-4 h-4 text-brand-lime" />
             Save Draft
           </button>
@@ -151,6 +204,7 @@ export default function CreateQuiz({ onBack }) {
             <div className="space-y-3">
               {questions.map((q, idx) => {
                 const isActive = activeIndex === idx;
+                const err = getQuestionError(q);
                 return (
                   <div 
                     key={q.id}
@@ -161,7 +215,12 @@ export default function CreateQuiz({ onBack }) {
                         : 'bg-white/[0.02] border-white/10 hover:bg-white/[0.05] border-transparent'
                     }`}
                   >
-                    {/* Drag Handle / Number */}
+                    {/* Small Red Dot for validation errors */}
+                    {err && (
+                      <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-[#090216] animate-pulse" title={err} />
+                    )}
+
+                    {/* Number / Handle */}
                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-heading font-bold text-xs shrink-0 ${
                       isActive ? 'bg-brand-violet text-white' : 'bg-white/10 text-slate-300'
                     }`}>
@@ -178,16 +237,25 @@ export default function CreateQuiz({ onBack }) {
                       </div>
                     </div>
 
-                    {/* Delete button on hover */}
-                    {questions.length > 1 && (
+                    {/* Action buttons on hover */}
+                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
                       <button 
-                        onClick={(e) => deleteQuestion(idx, e)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/40 transition-opacity"
-                        title="Delete question"
+                        onClick={(e) => duplicateQuestion(idx, e)}
+                        className="p-1.5 rounded-lg bg-white/10 text-slate-300 hover:text-white hover:bg-white/20 transition-colors"
+                        title="Duplicate question"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Copy className="w-3 h-3" />
                       </button>
-                    )}
+                      {questions.length > 1 && (
+                        <button 
+                          onClick={(e) => deleteQuestion(idx, e)}
+                          className="p-1.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/40 transition-colors"
+                          title="Delete question"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -207,22 +275,32 @@ export default function CreateQuiz({ onBack }) {
         </aside>
 
         {/* CENTRE PANEL: Main Question Editor (~6 cols) */}
-        <section className="lg:col-span-6 bg-[#0F071E] p-6 sm:p-8 overflow-y-auto flex flex-col justify-between space-y-8">
+        <section className="lg:col-span-6 bg-[#0F071E] p-6 sm:p-8 overflow-y-auto flex flex-col justify-between space-y-6">
           <div className="space-y-6 max-w-3xl mx-auto w-full">
             
-            {/* Question Number Banner */}
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-widest text-brand-lime">
-                Question {activeIndex + 1} of {questions.length} • {currentQ.type}
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-xs bg-white/5 border border-white/10 px-3 py-1 rounded-full text-slate-300">
-                  ⏱ {currentQ.timeLimit} seconds
+            {/* Question Number Banner & Friendly Inline Hint */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-widest text-brand-lime">
+                  Question {activeIndex + 1} of {questions.length} • {currentQ.type}
                 </span>
-                <span className="text-xs bg-white/5 border border-white/10 px-3 py-1 rounded-full text-slate-300">
-                  🏆 {currentQ.points} Points
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs bg-white/5 border border-white/10 px-3 py-1 rounded-full text-slate-300">
+                    ⏱ {currentQ.timeLimit} seconds
+                  </span>
+                  <span className="text-xs bg-white/5 border border-white/10 px-3 py-1 rounded-full text-slate-300">
+                    🏆 {currentQ.points} Points
+                  </span>
+                </div>
               </div>
+
+              {/* Friendly Inline Hint */}
+              {currentError && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-3 flex items-center gap-3 text-red-400 text-xs font-semibold animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{currentError}</span>
+                </div>
+              )}
             </div>
 
             {/* Big Question Text Field */}
@@ -251,13 +329,13 @@ export default function CreateQuiz({ onBack }) {
               </div>
             </div>
 
-            {/* 4 Answer Tiles in Kahoot Colors */}
+            {/* Answer Choices (2 for True/False, 4 for Quiz/Poll) */}
             <div className="space-y-3">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">
-                Answer Choices (Toggle correct answer)
+                Answer Choices {currentQ.type === 'True/False' ? '(True / False)' : '(4 Options)'}
               </label>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className={`grid grid-cols-1 ${currentQ.type === 'True/False' ? 'sm:grid-cols-2 max-w-xl mx-auto' : 'sm:grid-cols-2'} gap-3.5`}>
                 {currentQ.answers.map((ans, ansIdx) => (
                   <div 
                     key={ansIdx}
@@ -277,7 +355,7 @@ export default function CreateQuiz({ onBack }) {
                       type="text"
                       value={ans.text}
                       onChange={(e) => handleAnswerChange(ansIdx, 'text', e.target.value)}
-                      placeholder={`Add answer ${ans.label}...`}
+                      placeholder={currentQ.type === 'True/False' ? ans.text : `Add answer ${ans.label}...`}
                       className="w-full bg-transparent font-heading font-bold text-sm text-white outline-none placeholder:text-slate-600"
                     />
 
