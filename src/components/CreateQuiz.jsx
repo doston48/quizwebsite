@@ -303,7 +303,7 @@ export default function CreateQuiz({ onBack, onHostLive }) {
           </button>
           
           <button 
-            onClick={() => onHostLive && onHostLive(quizTitle)}
+            onClick={() => onHostLive && onHostLive(quizTitle, questions)}
             className="btn-tactile-lime py-2.5 px-5 text-sm flex items-center gap-2 cursor-pointer"
           >
             <Play className="w-4 h-4 fill-brand-dark" />
