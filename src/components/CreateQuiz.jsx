@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, Copy, Image, Clock, Award, Check, Settings, Sparkles, Play, Save, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Copy, Image, Clock, Award, Check, Settings, Sparkles, Play, Save, AlertCircle, Wand2 } from 'lucide-react';
 
-export default function CreateQuiz({ onBack }) {
+export default function CreateQuiz({ onBack, onHostLive }) {
   const [quizTitle, setQuizTitle] = useState('Biology 101: Cell Division Masterclass');
   
   const [questions, setQuestions] = useState([
@@ -50,6 +50,121 @@ export default function CreateQuiz({ onBack }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const currentQ = questions[activeIndex];
 
+  // Load sample Space quiz
+  const handleLoadSampleQuiz = () => {
+    setQuizTitle('Deep Space Exploration: Astronomy Masterclass');
+    const spaceQuestions = [
+      {
+        id: 101,
+        type: 'Quiz',
+        timeLimit: 20,
+        points: 'Standard',
+        question: 'Which planet in our solar system is known as the Red Planet?',
+        image: null,
+        answers: [
+          { text: 'Mars', correct: true, color: 'bg-red-500', symbol: '▲', label: 'Red' },
+          { text: 'Venus', correct: false, color: 'bg-blue-600', symbol: '◆', label: 'Blue' },
+          { text: 'Jupiter', correct: false, color: 'bg-amber-500', symbol: '●', label: 'Yellow' },
+          { text: 'Saturn', correct: false, color: 'bg-emerald-600', symbol: '■', label: 'Green' },
+        ]
+      },
+      {
+        id: 102,
+        type: 'True/False',
+        timeLimit: 15,
+        points: 'Standard',
+        question: 'Venus is the hottest planet in our solar system, even though Mercury is closer to the Sun.',
+        image: null,
+        answers: [
+          { text: 'True', correct: true, color: 'bg-emerald-600', symbol: '▲', label: 'True' },
+          { text: 'False', correct: false, color: 'bg-red-500', symbol: '◆', label: 'False' },
+        ]
+      },
+      {
+        id: 103,
+        type: 'Quiz',
+        timeLimit: 30,
+        points: 'Double',
+        question: 'What is the name of the supermassive black hole located at the center of our Milky Way galaxy?',
+        image: null,
+        answers: [
+          { text: 'Sagittarius A*', correct: true, color: 'bg-red-500', symbol: '▲', label: 'Red' },
+          { text: 'Andromeda X', correct: false, color: 'bg-blue-600', symbol: '◆', label: 'Blue' },
+          { text: 'Event Horizon-1', correct: false, color: 'bg-amber-500', symbol: '●', label: 'Yellow' },
+          { text: 'Centaurus B', correct: false, color: 'bg-emerald-600', symbol: '■', label: 'Green' },
+        ]
+      },
+      {
+        id: 104,
+        type: 'Quiz',
+        timeLimit: 20,
+        points: 'Standard',
+        question: 'Which spacecraft was the first to land humans on the Moon in 1969?',
+        image: null,
+        answers: [
+          { text: 'Apollo 11', correct: true, color: 'bg-red-500', symbol: '▲', label: 'Red' },
+          { text: 'Sputnik 1', correct: false, color: 'bg-blue-600', symbol: '◆', label: 'Blue' },
+          { text: 'Voyager 2', correct: false, color: 'bg-amber-500', symbol: '●', label: 'Yellow' },
+          { text: 'Curiosity Rover', correct: false, color: 'bg-emerald-600', symbol: '■', label: 'Green' },
+        ]
+      },
+      {
+        id: 105,
+        type: 'True/False',
+        timeLimit: 15,
+        points: 'Standard',
+        question: 'A light-year is a unit of time measuring how long it takes light to travel across the universe.',
+        image: null,
+        answers: [
+          { text: 'True', correct: false, color: 'bg-emerald-600', symbol: '▲', label: 'True' },
+          { text: 'False', correct: true, color: 'bg-red-500', symbol: '◆', label: 'False' },
+        ]
+      },
+      {
+        id: 106,
+        type: 'Quiz',
+        timeLimit: 25,
+        points: 'Standard',
+        question: 'Which gas makes up approximately 78% of Earth’s atmosphere?',
+        image: null,
+        answers: [
+          { text: 'Nitrogen', correct: true, color: 'bg-red-500', symbol: '▲', label: 'Red' },
+          { text: 'Oxygen', correct: false, color: 'bg-blue-600', symbol: '◆', label: 'Blue' },
+          { text: 'Carbon Dioxide', correct: false, color: 'bg-amber-500', symbol: '●', label: 'Yellow' },
+          { text: 'Argon', correct: false, color: 'bg-emerald-600', symbol: '■', label: 'Green' },
+        ]
+      },
+      {
+        id: 107,
+        type: 'Quiz',
+        timeLimit: 20,
+        points: 'Double',
+        question: 'What is the largest moon of Saturn, known for its thick nitrogen-rich atmosphere?',
+        image: null,
+        answers: [
+          { text: 'Titan', correct: true, color: 'bg-red-500', symbol: '▲', label: 'Red' },
+          { text: 'Europa', correct: false, color: 'bg-blue-600', symbol: '◆', label: 'Blue' },
+          { text: 'Ganymede', correct: false, color: 'bg-amber-500', symbol: '●', label: 'Yellow' },
+          { text: 'Io', correct: false, color: 'bg-emerald-600', symbol: '■', label: 'Green' },
+        ]
+      },
+      {
+        id: 108,
+        type: 'True/False',
+        timeLimit: 15,
+        points: 'Standard',
+        question: 'The Sun is classified as a yellow dwarf star.',
+        image: null,
+        answers: [
+          { text: 'True', correct: true, color: 'bg-emerald-600', symbol: '▲', label: 'True' },
+          { text: 'False', correct: false, color: 'bg-red-500', symbol: '◆', label: 'False' },
+        ]
+      },
+    ];
+    setQuestions(spaceQuestions);
+    setActiveIndex(0);
+  };
+
   // Validation checker for a question
   const getQuestionError = (q) => {
     if (!q.question || !q.question.trim()) return "Question text is required";
@@ -65,14 +180,12 @@ export default function CreateQuiz({ onBack }) {
   const handleQuestionChange = (field, value) => {
     const updated = [...questions];
     if (field === 'type') {
-      // If changing type to True/False, adjust answers to 2
       if (value === 'True/False') {
         updated[activeIndex].answers = [
           { text: 'True', correct: true, color: 'bg-emerald-600', symbol: '▲', label: 'True' },
           { text: 'False', correct: false, color: 'bg-red-500', symbol: '◆', label: 'False' },
         ];
       } else if (currentQ.type === 'True/False' && (value === 'Quiz' || value === 'Poll')) {
-        // Reset to 4 answers
         updated[activeIndex].answers = [
           { text: '', correct: true, color: 'bg-red-500', symbol: '▲', label: 'Red' },
           { text: '', correct: false, color: 'bg-blue-600', symbol: '◆', label: 'Blue' },
@@ -89,7 +202,6 @@ export default function CreateQuiz({ onBack }) {
     const updated = [...questions];
     if (field === 'correct') {
       if (updated[activeIndex].type === 'True/False') {
-        // For True/False, only one can be correct
         updated[activeIndex].answers.forEach((a, i) => {
           a.correct = (i === ansIdx);
         });
@@ -176,11 +288,24 @@ export default function CreateQuiz({ onBack }) {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Fill with sample quiz button */}
+          <button 
+            onClick={handleLoadSampleQuiz}
+            className="bg-brand-violet/30 hover:bg-brand-violet/50 border border-brand-violet/50 text-brand-lime font-heading font-bold px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-brand-violet/20"
+          >
+            <Wand2 className="w-4 h-4 text-brand-lime animate-bounce" />
+            ✨ Fill with sample quiz
+          </button>
+
           <button className="bg-white/10 hover:bg-white/15 text-white font-heading font-bold px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-all cursor-pointer">
             <Save className="w-4 h-4 text-brand-lime" />
             Save Draft
           </button>
-          <button className="btn-tactile-lime py-2.5 px-5 text-sm flex items-center gap-2">
+          
+          <button 
+            onClick={() => onHostLive && onHostLive(quizTitle)}
+            className="btn-tactile-lime py-2.5 px-5 text-sm flex items-center gap-2 cursor-pointer"
+          >
             <Play className="w-4 h-4 fill-brand-dark" />
             Host Live
           </button>
